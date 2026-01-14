@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.env
+*.venv/
+env/
+venv/
+.Python
+
+# Django
+*.log
+*.pot
+*.pyc
+db.sqlite3
+/media/
+ы
+# Docker
+*.dockerignore
+docker-compose.override.yml
+
+# VS Code
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
