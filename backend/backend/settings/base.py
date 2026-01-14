@@ -33,7 +33,11 @@ THIRD_APPS = [
     "silk",
 ]
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_APPS
+LOCAL_APPS = [
+    "users",
+]
+
+INSTALLED_APPS = DJANGO_APPS + THIRD_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "silk.middleware.SilkyMiddleware",
