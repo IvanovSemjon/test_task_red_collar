@@ -12,3 +12,5 @@ DATABASES = {
         "PORT": os.getenv("POSTGRES_PORT", 5432),
     }
 }
+
+ALLOWED_HOSTS = ["*"]

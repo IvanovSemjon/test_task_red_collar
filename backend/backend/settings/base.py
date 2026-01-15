@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import timedelta
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -24,6 +25,7 @@ DJANGO_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.gis",
+    "django.contrib.sites",
 ]
 
 THIRD_APPS = [
@@ -35,6 +37,7 @@ THIRD_APPS = [
 
 LOCAL_APPS = [
     "users",
+    "points",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_APPS + LOCAL_APPS
@@ -100,3 +103,5 @@ SPECTACULAR_SETTINGS = {
 }
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
+
+AUTH_USER_MODEL = "users.CustomUser"

@@ -3,6 +3,9 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 
 class CustomUser(AbstractUser):
+    """
+    Кастомный класс пользователя.
+    """
     avatar = models.ImageField(
         upload_to="avatars/",
         null=True,
@@ -10,7 +13,7 @@ class CustomUser(AbstractUser):
     )
 
     # Даем возможность обозначить себя и написать имя или "погоняло"
-    # Мы же все таки в диком постметеоритном мире, хаос и анархия.
+    # Мы же все таки в диком постметеоритном мире и вокруг хаос и анархия.
     display_name = models.CharField(
         max_length=50,
         blank=True,
@@ -24,7 +27,7 @@ class CustomUser(AbstractUser):
         max_length=100,
         blank=True,
         null=True,
-        help_text="Название сообщества"
+        help_text="Название группировки"
     )
 
     groups = models.ManyToManyField(
@@ -41,10 +44,10 @@ class CustomUser(AbstractUser):
         help_text="Разрешения пользователя"
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Показывать display_name или username"""
-        return self.display_name or self.username
+        return str(self.display_name or self.username)
     
 
 
