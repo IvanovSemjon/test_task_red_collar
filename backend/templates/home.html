@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Карта Пустошей{% endblock %}
+
+{% block content %}
+<h2 style="text-align: center; margin-bottom: 20px;">🗺 КАРТА ПУСТОШЕЙ 🗺</h2>
+
+<div class="search-form">
+    <input type="number" id="search-lat" placeholder="Широта" step="0.000001">
+    <input type="number" id="search-lon" placeholder="Долгота" step="0.000001">
+    <input type="number" id="search-radius" placeholder="Радиус (км)" value="10">
+    <button class="btn" onclick="searchPoints()">ПОИСК</button>
+</div>
+
+<div id="map"></div>
+
+<div id="results" style="margin-top: 20px;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const map = L.map('map').setView([55.7558, 37.6173], 10);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const markers = [];
+
+    async function loadPoints() {
+        try {
+            const response = await fetch('/api/points/', {
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                }
+            });
+            const data = await response.json();
+            
+            data.results.forEach(point => {
+                const [lon, lat] = point.location.coordinates;
+                const marker = L.marker([lat, lon]).addTo(map);
+                marker.bindPopup(`<b>${point.title}</b><br>${point.description || ''}`);
+                markers.push(marker);
+            });
+        } catch (error) {
+            console.error('Ошибка загрузки точек:', error);
+        }
+    }
+
+    async function searchPoints() {
+        const lat = document.getElementById('search-lat').value;
+        const lon = document.getElementById('search-lon').value;
+        const radius = document.getElementById('search-radius').value;
+
+        if (!lat || !lon || !radius) {
+            alert('Заполните все поля');
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `/api/points/search/?latitude=${lat}&longitude=${lon}&radius=${radius}`,
+                {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                    }
+                }
+            );
+            const points = await response.json();
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h3>Найдено точек: ' + points.length + '</h3>';
+            
+            points.forEach(point => {
+                resultsDiv.innerHTML += `
+                    <div class="point-card">
+                        <h3>${point.title}</h3>
+                        <p>${point.description || 'Нет описания'}</p>
+                        <p>Владелец: ${point.owner_display_name || 'Неизвестен'}</p>
+                    </div>
+                `;
+            });
+        } catch (error) {
+            console.error('Ошибка поиска:', error);
+        }
+    }
+
+    loadPoints();
+</script>
+{% endblock %}

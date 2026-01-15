@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Сообщения Пустошей{% endblock %}
+
+{% block content %}
+<h2 style="text-align: center; margin-bottom: 20px;">💬 СООБЩЕНИЯ ВЫЖИВШИХ 💬</h2>
+
+<div id="messages-list">
+    <p style="text-align: center; color: #00ff00;">Загрузка сообщений...</p>
+</div>
+
+<div style="text-align: center; margin-top: 20px;">
+    <button class="btn" id="prev-btn" onclick="loadPage(currentPage - 1)">◄ НАЗАД</button>
+    <span id="page-info" style="margin: 0 20px; color: #00ff00;"></span>
+    <button class="btn" id="next-btn" onclick="loadPage(currentPage + 1)">ВПЕРЕД ►</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+
+    async function loadPage(page) {
+        try {
+            const response = await fetch(`/api/points/messages/?page=${page}`, {
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                }
+            });
+            const data = await response.json();
+            
+            currentPage = page;
+            totalPages = Math.ceil(data.count / 20);
+            
+            const list = document.getElementById('messages-list');
+            list.innerHTML = '';
+            
+            data.results.forEach(msg => {
+                list.innerHTML += `
+                    <div class="message-card">
+                        <h4>${msg.user_display_name || 'Аноним'}</h4>
+                        ${msg.user_avatar ? `<img src="${msg.user_avatar}" class="avatar" alt="Avatar">` : ''}
+                        <p>${msg.text}</p>
+                        ${msg.image ? `<img src="${msg.image}" style="max-width: 100%; margin-top: 10px; border: 1px solid #00ff00;">` : ''}
+                        ${msg.file ? `<p><a href="${msg.file}" class="btn" download>📎 Скачать файл</a></p>` : ''}
+                        <p style="font-size: 0.8em; color: #006600; margin-top: 10px;">
+                            Точка ID: ${msg.point} | ${new Date(msg.created_at).toLocaleString('ru-RU')}
+                        </p>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('page-info').textContent = `Страница ${currentPage} из ${totalPages}`;
+            document.getElementById('prev-btn').disabled = currentPage === 1;
+            document.getElementById('next-btn').disabled = currentPage === totalPages;
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            document.getElementById('messages-list').innerHTML = '<p style="color: red;">Ошибка загрузки сообщений</p>';
+        }
+    }
+
+    loadPage(1);
+</script>
+{% endblock %}

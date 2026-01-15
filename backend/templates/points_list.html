@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Точки Пустошей{% endblock %}
+
+{% block content %}
+<h2 style="text-align: center; margin-bottom: 20px;">📍 ЗАРЕГИСТРИРОВАННЫЕ ТОЧКИ 📍</h2>
+
+<div class="grid" id="points-grid">
+    <p style="text-align: center; color: #00ff00;">Загрузка данных...</p>
+</div>
+
+<div style="text-align: center; margin-top: 20px;">
+    <button class="btn" id="prev-btn" onclick="loadPage(currentPage - 1)">◄ НАЗАД</button>
+    <span id="page-info" style="margin: 0 20px; color: #00ff00;"></span>
+    <button class="btn" id="next-btn" onclick="loadPage(currentPage + 1)">ВПЕРЕД ►</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+
+    async function loadPage(page) {
+        try {
+            const response = await fetch(`/api/points/?page=${page}`, {
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                }
+            });
+            const data = await response.json();
+            
+            currentPage = page;
+            totalPages = Math.ceil(data.count / 20);
+            
+            const grid = document.getElementById('points-grid');
+            grid.innerHTML = '';
+            
+            data.results.forEach(point => {
+                const [lon, lat] = point.location.coordinates;
+                grid.innerHTML += `
+                    <div class="point-card">
+                        <h3>${point.title}</h3>
+                        <p>${point.description || 'Нет описания'}</p>
+                        <p><strong>Координаты:</strong> ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>
+                        <p><strong>Владелец:</strong> ${point.owner_display_name || 'Неизвестен'}</p>
+                        ${point.owner_avatar ? `<img src="${point.owner_avatar}" class="avatar" alt="Avatar">` : ''}
+                    </div>
+                `;
+            });
+            
+            document.getElementById('page-info').textContent = `Страница ${currentPage} из ${totalPages}`;
+            document.getElementById('prev-btn').disabled = currentPage === 1;
+            document.getElementById('next-btn').disabled = currentPage === totalPages;
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            document.getElementById('points-grid').innerHTML = '<p style="color: red;">Ошибка загрузки данных</p>';
+        }
+    }
+
+    loadPage(1);
+</script>
+{% endblock %}

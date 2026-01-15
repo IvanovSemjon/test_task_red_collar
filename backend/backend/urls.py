@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
+from django.conf.urls.static import static
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
@@ -10,8 +11,13 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from points.web_views import home_view, points_list_view, messages_list_view
 
 urlpatterns = [
+    path("", home_view, name="home"),
+    path("points/", points_list_view, name="points-list"),
+    path("messages/", messages_list_view, name="messages-list"),
+    
     path("admin/", admin.site.urls),
 
     # Документация
@@ -33,3 +39,5 @@ if settings.DEBUG:
     urlpatterns += [
         path("silk/", include("silk.urls", namespace="silk")),
     ]
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

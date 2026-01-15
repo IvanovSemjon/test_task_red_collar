@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Wasteland Navigator{% endblock %}</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="wasteland-container">
+        <header class="wasteland-header">
+            <h1 class="glitch" data-text="WASTELAND NAVIGATOR">WASTELAND NAVIGATOR</h1>
+            <nav class="wasteland-nav">
+                <a href="{% url 'home' %}">КАРТА</a>
+                <a href="{% url 'points-list' %}">ТОЧКИ</a>
+                <a href="{% url 'messages-list' %}">СООБЩЕНИЯ</a>
+                {% if user.is_authenticated %}
+                    <span class="user-info">{{ user.display_name|default:user.username }}</span>
+                    <a href="/admin/logout/">ВЫХОД</a>
+                {% else %}
+                    <a href="/admin/login/">ВХОД</a>
+                {% endif %}
+            </nav>
+        </header>
+
+        <main class="wasteland-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="wasteland-footer">
+            <p>⚠ СИСТЕМА НАВИГАЦИИ ПУСТОШЕЙ | СТАТУС: АКТИВНА ⚠</p>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/static/js/main.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
