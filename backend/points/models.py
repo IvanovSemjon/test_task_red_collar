@@ -3,7 +3,8 @@ from django.contrib.gis.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.indexes import GistIndex
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 User = get_user_model()
 
@@ -58,3 +59,9 @@ class PointMessage(models.Model):
 
     def __str__(self):
         return f"Message by {self.user.username} on {self.point.title}"   # pylint: disable=no-member
+
+@receiver(post_save, sender=PointMessage)
+def post_message_image_save(sender, instance, created, **kwargs):
+    if instance.image:
+        from .tasks import generate_message_image_thumbnail
+        generate_message_image_thumbnail.delay(instance.id)

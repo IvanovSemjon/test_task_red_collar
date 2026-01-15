@@ -1,6 +1,8 @@
 """Определение класса пользователя."""
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class CustomUser(AbstractUser):
     """
@@ -52,5 +54,8 @@ class CustomUser(AbstractUser):
 
 
 
-
-
+@receiver(post_save, sender=CustomUser)
+def post_avatar_save(sender, instance, created, **kwargs):
+    if instance.avatar:
+        from .tasks import generate_avatar_thumbnail
+        generate_avatar_thumbnail.delay(instance.id)
