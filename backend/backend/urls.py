@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
@@ -26,3 +27,9 @@ urlpatterns = [
     path("api/users/", include("users.urls")),
     path("api/", include("points.urls")),
 ]
+
+if settings.DEBUG:
+    import silk  # noqa: F401
+    urlpatterns += [
+        path("silk/", include("silk.urls", namespace="silk")),
+    ]

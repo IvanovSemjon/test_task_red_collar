@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.gis.geos import Point as GeoPoint
 from django.contrib.gis.measure import D
+from django.core.cache import cache
 
 from .models import Point
 from .serializers import PointSerializer
@@ -21,9 +22,16 @@ class PointViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Все точки доступны для чтения авторизованным пользователям.
+        Получение точек с привязкой к пользователям.
         """
-        return Point.objects.none()   # pylint: disable=no-member
+        cache_key = "all_points"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return cached_data
+
+        queryset = Point.objects.all().order_by("-created_at")  # pylint: disable=no-member
+        cache.set(cache_key, queryset, timeout=60*5)
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -51,7 +59,6 @@ class PointViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(points, many=True)
         return Response(serializer.data)
-    
 
 class PointMessageViewSet(viewsets.ModelViewSet):
     """
@@ -63,9 +70,16 @@ class PointMessageViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Все сообщения доступны авторизованным пользователям.
+        Получение сообщений с привязкой к точкам и пользователям.
         """
-        return PointMessage.objects.none()  # pylint: disable=no-member
+        cache_key = "all_messages"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return cached_data
+
+        queryset = PointMessage.objects.select_related("point", "user").all().order_by("-created_at")  # pylint: disable=no-member
+        cache.set(cache_key, queryset, timeout=60*5)
+        return queryset
 
     def perform_create(self, serializer):
         """
