@@ -12,11 +12,13 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from points.web_views import home_view, points_list_view, messages_list_view
+from backend.health import health_check
 
 urlpatterns = [
     path("", home_view, name="home"),
     path("points/", points_list_view, name="points-list"),
     path("messages/", messages_list_view, name="messages-list"),
+    path("health/", health_check, name="health-check"),
     
     path("admin/", admin.site.urls),
 

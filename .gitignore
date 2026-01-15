@@ -1,28 +1,61 @@
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-*.pyc
-*.env
-*.venv/
+*$py.class
+*.so
+.Python
 env/
 venv/
-.Python
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
 # Django
 *.log
-*.pot
-*.pyc
+local_settings.py
 db.sqlite3
-/media/
-ы
-# Docker
-*.dockerignore
-docker-compose.override.yml
+db.sqlite3-journal
+/media
+/staticfiles
+/static
 
-# VS Code
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.local
+
+# IDE
 .vscode/
 .idea/
-*.sublime-project
-*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.pid
