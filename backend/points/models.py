@@ -1,6 +1,10 @@
 """Модель точки с географическими координатами."""
 from django.contrib.gis.db import models
 from django.conf import settings
+from django.contrib.auth import get_user_model
+
+
+User = get_user_model()
 
 class Point(models.Model):
     """
@@ -34,3 +38,21 @@ class Point(models.Model):
         Строковое представление модели точки.
         """
         return f"{self.title} ({self.owner})"
+
+
+class PointMessage(models.Model):
+    """
+    Возможность добавления сообщений к точке.
+    """
+    point = models.ForeignKey("Point", on_delete=models.CASCADE, related_name="messages")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField()
+    file = models.FileField(upload_to="point_messages_files/", null=True, blank=True)
+    image = models.ImageField(upload_to="point_messages_images/", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Message by {self.user.username} on {self.point.title}"  # pylint: disable=no-member

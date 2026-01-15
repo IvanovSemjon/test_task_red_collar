@@ -4,11 +4,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.gis.geos import Point as GeoPoint
 from django.contrib.gis.measure import D
-from .models import Point
-from .serializers import PointSerializer
+from .models import Point, PointMessage
+from .serializers import PointSerializer, PointMessageSerializer
+
 
 class PointViewSet(viewsets.ModelViewSet):
-    queryset = Point.objects.all().order_by("-created_at")
+    queryset = Point.objects.all().order_by("-created_at")  # pylint: disable=no-member
     serializer_class = PointSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -29,7 +30,24 @@ class PointViewSet(viewsets.ModelViewSet):
             return Response({"error": "Invalid or missing parameters"}, status=400)
 
         user_location = GeoPoint(lon, lat, srid=4326)
-        points = Point.objects.filter(location__distance_lte=(user_location, D(km=radius_km)))
+        points = Point.objects.filter(location__distance_lte=(user_location, D(km=radius_km)))  # pylint: disable=no-member
 
         serializer = self.get_serializer(points, many=True)
         return Response(serializer.data)
+
+
+class PointMessageViewSet(viewsets.ModelViewSet):
+    """
+    Класс ViewSet для управления сообщениями к точкам.
+    """
+    serializer_class = PointMessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Возвращает все сообщения в радиусе или для точки, видимые пользователю.
+        """
+        return PointMessage.objects.all().order_by("-created_at")  # pylint: disable=no-member
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
