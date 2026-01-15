@@ -97,9 +97,10 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Geo Points API",
-    "DESCRIPTION": "REST API для работы с географическими точками и сообщениями",
-    "VERSION": "1.0.0",
+    'TITLE': 'Geo Points API',
+    'DESCRIPTION': 'API для работы с географическими точками, сообщениями и пользователями',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
