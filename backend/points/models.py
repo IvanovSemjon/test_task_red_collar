@@ -2,9 +2,11 @@
 from django.contrib.gis.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.indexes import GistIndex
 
 
 User = get_user_model()
+
 
 class Point(models.Model):
     """
@@ -14,7 +16,7 @@ class Point(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="points",
-        verbose_name="Владелец точки"
+        verbose_name="Владелец точки",
     )
     title = models.CharField(max_length=100, verbose_name="Название точки")
     description = models.TextField(blank=True, null=True, verbose_name="Описание точки")
@@ -24,18 +26,18 @@ class Point(models.Model):
 
     class Meta:
         """
-        Мета информация о модели точки.
+        Мета класса Point
         """
         verbose_name = "Точка"
         verbose_name_plural = "Точки"
         indexes = [
+            GistIndex(fields=["location"]),
             models.Index(fields=["created_at"]),
-            models.Index(fields=["updated_at"]),
         ]
 
     def __str__(self):
         """
-        Строковое представление модели точки.
+        Строковое представление.
         """
         return f"{self.title} ({self.owner})"
 
@@ -55,4 +57,4 @@ class PointMessage(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Message by {self.user.username} on {self.point.title}"  # pylint: disable=no-member
+        return f"Message by {self.user.username} on {self.point.title}"   # pylint: disable=no-member

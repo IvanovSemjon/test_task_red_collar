@@ -4,32 +4,42 @@ from .models import Point, PointMessage
 class PointSerializer(serializers.ModelSerializer):
     """
     Сериализатор для модели точки.
+    Показывает display_name и аватар владельца.
     """
-    owner = serializers.StringRelatedField(read_only=True)
+    owner_display_name = serializers.CharField(source="owner.display_name", read_only=True)
+    owner_avatar = serializers.ImageField(source="owner.avatar", read_only=True)
 
     class Meta:
         model = Point
-        fields = ("id", "title", "description", "location", "owner", "created_at", "updated_at")
-        read_only_fields = ("id", "owner", "created_at", "updated_at")
+        fields = (
+            "id", "title", "description", "location", 
+            "owner", "owner_display_name", "owner_avatar",
+            "created_at", "updated_at"
+        )
+        read_only_fields = ("id", "owner", "owner_display_name", "owner_avatar", "created_at", "updated_at")
 
 
 class PointMessageSerializer(serializers.ModelSerializer):
     """
-    Сериализатор для модели сообщений к точке.
+    Сериализатор сообщений к точкам.
+    Показывает display_name и аватар пользователя.
     """
-    user = serializers.StringRelatedField(read_only=True)
-    point = serializers.PrimaryKeyRelatedField(queryset=None)
+    user_display_name = serializers.CharField(source="user.display_name", read_only=True)
+    user_avatar = serializers.ImageField(source="user.avatar", read_only=True)
+    point = serializers.PrimaryKeyRelatedField(queryset=Point.objects.all())
 
     class Meta:
-        """
-         Мета информация для сериализатора сообщений к точке."""
         model = PointMessage
-        fields = ("id", "point", "user", "text", "file", "image", "created_at")
-        read_only_fields = ("id", "user", "created_at")
+        fields = (
+            "id", "point", "user", "user_display_name", "user_avatar",
+            "text", "file", "image", "created_at"
+        )
+        read_only_fields = ("id", "user", "user_display_name", "user_avatar", "created_at")
 
-    def __init__(self, *args, **kwargs):
+    def validate_point(self, point):
         """
-        Мета информация для инициализации сериализатора сообщений к точке.
+        Проверка существования точки.
         """
-        super().__init__(*args, **kwargs)
-        self.fields["point"].queryset = self.context["request"].user.points.all()
+        if not point:
+            raise serializers.ValidationError("Точка не существует")
+        return point

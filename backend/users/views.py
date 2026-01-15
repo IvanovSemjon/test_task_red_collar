@@ -1,27 +1,38 @@
-""" Views для регистрации и обновления"""
-from rest_framework import generics, permissions
+from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from .models import CustomUser
 from .serializers import UserRegisterSerializer, UserSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
-class UserRegisterView(generics.CreateAPIView):
+class UserViewSet(viewsets.GenericViewSet):
     """
-    Регистрация.
-    """
-    queryset = CustomUser.objects.all()
-    serializer_class = UserRegisterSerializer
-    permission_classes = [permissions.AllowAny]
-
-class UserDetailView(generics.RetrieveUpdateAPIView):
-    """
-    Обновление.
+    ViewSet для управления пользователями.
     """
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_object(self):
+    @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
+    def register(self, request):
         """
-        Получение объекта.
+        Регистрация пользователя + возврат JWT.
         """
-        return self.request.user
+        serializer = UserRegisterSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get", "patch", "put"])
+    def me(self, request):
+        """
+        Просмотр/редактирование текущего пользователя.
+        """
+        if request.method in ["PATCH", "PUT"]:
+            serializer = UserSerializer(request.user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
