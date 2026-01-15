@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.contrib.gis.geos import GEOSGeometry
 from .models import Point, PointMessage
 
 class PointSerializer(serializers.ModelSerializer):
@@ -17,6 +18,12 @@ class PointSerializer(serializers.ModelSerializer):
             "created_at", "updated_at"
         )
         read_only_fields = ("id", "owner", "owner_display_name", "owner_avatar", "created_at", "updated_at")
+
+    def create(self, validated_data):
+        if isinstance(validated_data.get('location'), dict):
+            import json
+            validated_data['location'] = GEOSGeometry(json.dumps(validated_data['location']))
+        return super().create(validated_data)
 
 
 class PointMessageSerializer(serializers.ModelSerializer):

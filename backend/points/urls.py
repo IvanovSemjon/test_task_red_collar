@@ -3,6 +3,6 @@ from .views import PointViewSet, PointMessageViewSet
 
 router = DefaultRouter()
 router.register(r"points", PointViewSet, basename="points")
-router.register(r"points/messages", PointMessageViewSet, basename="point-messages")
+router.register(r"messages", PointMessageViewSet, basename="point-messages")
 
 urlpatterns = router.urls

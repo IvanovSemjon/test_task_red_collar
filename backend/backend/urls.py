@@ -16,8 +16,8 @@ from backend.health import health_check
 
 urlpatterns = [
     path("", home_view, name="home"),
-    path("points/", points_list_view, name="points-list"),
-    path("messages/", messages_list_view, name="messages-list"),
+    path("web/points/", points_list_view, name="points-list"),
+    path("web/messages/", messages_list_view, name="messages-list"),
     path("health/", health_check, name="health-check"),
     
     path("admin/", admin.site.urls),

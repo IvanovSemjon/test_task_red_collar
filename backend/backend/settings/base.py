@@ -67,7 +67,6 @@ DJANGO_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.gis",
-    "django.contrib.sites",
 ]
 
 THIRD_APPS = [

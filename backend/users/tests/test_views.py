@@ -95,10 +95,15 @@ def test_user_me_patch_avatar(api_client, user):
     """
     PATCH /api/users/me/ позволяет обновить аватар пользователя
     """
+    from PIL import Image
+    import io
+    
     api_client.force_authenticate(user=user)
 
-    temp_file = tempfile.NamedTemporaryFile(suffix=".jpg")
-    temp_file.write(b"fake image content")
+    # Создаем реальное изображение
+    image = Image.new('RGB', (100, 100), color='red')
+    temp_file = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+    image.save(temp_file, format='JPEG')
     temp_file.seek(0)
 
     response = api_client.patch(

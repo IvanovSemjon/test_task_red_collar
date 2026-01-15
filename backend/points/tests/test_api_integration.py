@@ -46,16 +46,16 @@ class TestMessagesAPI:
             "point": point.id,
             "text": "Тестовое сообщение"
         }
-        response = api_client.post("/api/points/messages/", data)
+        response = api_client.post("/api/messages/", data)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["text"] == "Тестовое сообщение"
 
     def test_search_messages_by_radius(self, api_client, user, point):
         """Тест поиска сообщений в радиусе."""
         api_client.force_authenticate(user=user)
-        api_client.post("/api/points/messages/", {"point": point.id, "text": "Test"})
+        api_client.post("/api/messages/", {"point": point.id, "text": "Test"})
         response = api_client.get(
-            "/api/points/messages/search_by_radius/?latitude=55.751244&longitude=37.618423&radius=5"
+            "/api/messages/search_by_radius/?latitude=55.751244&longitude=37.618423&radius=5"
         )
         assert response.status_code == status.HTTP_200_OK
 

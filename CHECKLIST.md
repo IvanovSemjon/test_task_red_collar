@@ -67,6 +67,12 @@
 ## Команды для проверки:
 
 ```bash
+# Применить миграции
+docker-compose exec web python manage.py migrate
+
+# Инициализировать проект (создать Site)
+docker-compose exec web python manage.py init_project
+
 # Проверка системы
 docker-compose exec web python manage.py check_system
 
