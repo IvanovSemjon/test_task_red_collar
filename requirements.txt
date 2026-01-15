@@ -22,6 +22,9 @@ django-silk
 pytest>=7.0
 pytest-django>=4.5
 
+django-cors-headers>=4.0
+argon2-cffi>=23.1.0
+
 sentry-sdk[django]
 
 rollbar>=1.0.0

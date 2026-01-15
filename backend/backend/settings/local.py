@@ -2,15 +2,17 @@ from .base import *
 
 DEBUG = True
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": os.getenv("POSTGRES_DB", "geo_db"),
-        "USER": os.getenv("POSTGRES_USER", "geo_user"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "geo_pass"),
-        "HOST": os.getenv("POSTGRES_HOST", "db"),
-        "PORT": os.getenv("POSTGRES_PORT", 5432),
-    }
-}
-
 ALLOWED_HOSTS = ["*"]
+
+# Отключаем HTTPS для разработки
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SECURE_HSTS_SECONDS = 0
+
+# Дополнительные настройки для разработки
+INTERNAL_IPS = ["127.0.0.1", "localhost"]
+
+# Более подробное логирование
+LOGGING["root"]["level"] = "DEBUG"
+LOGGING["loggers"]["django.db.backends"]["level"] = "DEBUG"

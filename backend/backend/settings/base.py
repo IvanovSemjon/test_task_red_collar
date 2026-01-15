@@ -18,6 +18,25 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ===========================
+# Безопасность
+# ===========================
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+CSRF_COOKIE_SECURE = False  # True в production
+SESSION_COOKIE_SECURE = False  # True в production
+SECURE_SSL_REDIRECT = False  # True в production
+SECURE_HSTS_SECONDS = 0  # 31536000 в production
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False  # True в production
+SECURE_HSTS_PRELOAD = False  # True в production
+
+# Session Security
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = "Lax"
+
+# ===========================
 # БД
 # ===========================
 DATABASES = {
@@ -28,8 +47,15 @@ DATABASES = {
         "PASSWORD": os.getenv("POSTGRES_PASSWORD", "geo_pass"),
         "HOST": os.getenv("POSTGRES_HOST", "db"),
         "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        "CONN_MAX_AGE": 600,
+        "OPTIONS": {
+            "connect_timeout": 10,
+        },
     }
 }
+
+DATABASE_ROUTERS = []
+ATOMIC_REQUESTS = True
 
 # ===========================
 # Приложения
@@ -79,6 +105,25 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
 ]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
 # ===========================
 # Шаблоны
@@ -102,6 +147,23 @@ TEMPLATES = [
 ROOT_URLCONF = "backend.urls"
 WSGI_APPLICATION = "backend.wsgi.application"
 ASGI_APPLICATION = "backend.asgi.application"
+
+# ===========================
+# Валидация паролей
+# ===========================
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 8}},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
+
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+]
 
 # ===========================
 # Статика
@@ -139,13 +201,45 @@ REST_FRAMEWORK = {
         "anon": "100/hour",
         "user": "1000/hour",
     },
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ],
+}
+
+# JWT настройки
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Geo Points API',
-    'DESCRIPTION': 'API для работы с географическими точками, сообщениями и пользователями',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
+    "TITLE": "Wasteland Navigator API",
+    "DESCRIPTION": "API для работы с географическими точками, сообщениями и пользователями в постапокалиптическом мире",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": "/api/",
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+        "displayOperationId": True,
+    },
+    "SECURITY": [
+        {
+            "Bearer": [],
+        }
+    ],
 }
 
 # ===========================
@@ -171,6 +265,65 @@ CACHES = {
     }
 }
 CACHE_TTL = 60 * 5
+
+# ===========================
+# Логирование
+# ===========================
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "filters": {
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        "file": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": BASE_DIR / "logs" / "django.log",
+            "maxBytes": 1024 * 1024 * 15,
+            "backupCount": 10,
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console", "file"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console", "file"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}
 
 # ===========================
 # Ролбар 
