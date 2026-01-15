@@ -21,3 +21,7 @@ django-silk
 
 pytest>=7.0
 pytest-django>=4.5
+
+sentry-sdk[django]
+
+rollbar>=1.0.0

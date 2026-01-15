@@ -1,9 +1,10 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.gis.geos import Point as GeoPoint
 from django.contrib.gis.measure import D
 from django.core.cache import cache
+from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Point
 from .serializers import PointSerializer
@@ -19,22 +20,21 @@ class PointViewSet(viewsets.ModelViewSet):
     serializer_class = PointSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
     http_method_names = ['post', 'get']
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['owner', 'created_at']
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at', 'updated_at', 'title']
+    ordering = ['-created_at']
 
     def get_queryset(self):
         """
-        Получение точек с привязкой к пользователям.
+        Получение точек с оптимизацией.
         """
-        cache_key = "all_points"
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            return cached_data
-
-        queryset = Point.objects.all().order_by("-created_at")  # pylint: disable=no-member
-        cache.set(cache_key, queryset, timeout=60*5)
-        return queryset
+        return Point.objects.select_related('owner').all()  # pylint: disable=no-member
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+        cache.delete("all_points")
 
     @action(detail=False, methods=["get"])
     def search(self, request):
@@ -53,7 +53,7 @@ class PointViewSet(viewsets.ModelViewSet):
 
         user_location = GeoPoint(lon, lat, srid=4326)
 
-        points = Point.objects.filter(    # pylint: disable=no-member
+        points = Point.objects.select_related('owner').filter(    # pylint: disable=no-member
             location__distance_lte=(user_location, D(km=radius_km))
         )
 
@@ -67,25 +67,24 @@ class PointMessageViewSet(viewsets.ModelViewSet):
     serializer_class = PointMessageSerializer
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ['post', 'get']
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['point', 'user', 'created_at']
+    search_fields = ['text']
+    ordering_fields = ['created_at']
+    ordering = ['-created_at']
 
     def get_queryset(self):
         """
-        Получение сообщений с привязкой к точкам и пользователям.
+        Получение сообщений с оптимизацией.
         """
-        cache_key = "all_messages"
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            return cached_data
-
-        queryset = PointMessage.objects.select_related("point", "user").all().order_by("-created_at")  # pylint: disable=no-member
-        cache.set(cache_key, queryset, timeout=60*5)
-        return queryset
+        return PointMessage.objects.select_related("point", "user").all()  # pylint: disable=no-member
 
     def perform_create(self, serializer):
         """
         Создание сообщения от имени текущего пользователя.
         """
         serializer.save(user=self.request.user)
+        cache.delete("all_messages")
 
     @action(detail=False, methods=["get"])
     def search_by_radius(self, request):

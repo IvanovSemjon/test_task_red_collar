@@ -1,11 +1,25 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+import rollbar
+from rollbar.contrib.django.middleware import RollbarNotifierMiddleware  # pylint: disable=import-error,unused-import
 
+# ===========================
+# Базовые настройки
+# ===========================
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-
 SECRET_KEY = os.getenv("SECRET_KEY")
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
+AUTH_USER_MODEL = "users.CustomUser"
+LANGUAGE_CODE = "ru-ru"
+TIME_ZONE = "UTC"
+USE_I18N = True
+USE_TZ = True
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# ===========================
+# БД
+# ===========================
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
@@ -17,6 +31,9 @@ DATABASES = {
     }
 }
 
+# ===========================
+# Приложения
+# ===========================
 DJANGO_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -42,6 +59,9 @@ LOCAL_APPS = [
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_APPS + LOCAL_APPS
 
+# ===========================
+# Мидлварь
+# ===========================
 MIDDLEWARE = [
     "silk.middleware.SilkyMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -52,6 +72,9 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
 ]
 
+# ===========================
+# Шаблоны
+# ===========================
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -69,20 +92,18 @@ TEMPLATES = [
 ]
 
 ROOT_URLCONF = "backend.urls"
-
 WSGI_APPLICATION = "backend.wsgi.application"
 ASGI_APPLICATION = "backend.asgi.application"
 
-LANGUAGE_CODE = "ru-ru"
-TIME_ZONE = "UTC"
-USE_I18N = True
-USE_TZ = True
-
+# ===========================
+# Статика
+# ===========================
 STATIC_URL = "/static/"
 MEDIA_URL = "/media/"
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
+# ===========================
+# Рест фреймворк
+# ===========================
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -93,7 +114,19 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
     ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/hour",
+        "user": "1000/hour",
+    },
 }
 
 SPECTACULAR_SETTINGS = {
@@ -103,10 +136,9 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
 }
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
-
-AUTH_USER_MODEL = "users.CustomUser"
-
+# ===========================
+# Селери
+# ===========================
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://redis:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://redis:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
@@ -114,6 +146,9 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 
+# ===========================
+# Кэш
+# ===========================
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -123,5 +158,21 @@ CACHES = {
         }
     }
 }
-
 CACHE_TTL = 60 * 5
+
+# ===========================
+# Ролбар 
+# ===========================
+ROLLBAR_ACCESS_TOKEN = os.getenv("ROLLBAR_ACCESS_TOKEN")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+if ROLLBAR_ACCESS_TOKEN:
+    rollbar.init(
+        access_token=ROLLBAR_ACCESS_TOKEN,
+        environment=ENVIRONMENT,
+        root=str(BASE_DIR),
+    )
+    if 'rollbar.contrib.django.middleware.RollbarNotifierMiddleware' not in MIDDLEWARE:
+        MIDDLEWARE.append('rollbar.contrib.django.middleware.RollbarNotifierMiddleware')
+else:
+    print("Warning: ROLLBAR_ACCESS_TOKEN not set. Rollbar is disabled.")

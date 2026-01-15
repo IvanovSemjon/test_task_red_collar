@@ -1,19 +1,27 @@
 from celery import shared_task  # pylint: disable=no-name-in-module
-
 from PIL import Image
 from django.core.files.base import ContentFile
+from django.conf import settings
 import io
+import rollbar  # pylint: disable=import-error
 from .models import PointMessage
 
-@shared_task
-def generate_message_image_thumbnail(message_id, size=(200, 200)):
-    msg = PointMessage.objects.get(id=message_id)  # pylint: disable=no-member
-    if not msg.image:
-        return
+ROLLBAR_ACCESS_TOKEN = getattr(settings, "ROLLBAR_ACCESS_TOKEN", None)
 
-    img = Image.open(msg.image)
-    img.thumbnail(size)
+@shared_task(bind=True)
+def generate_message_image_thumbnail(self, message_id, size=(200, 200)):
+    try:
+        msg = PointMessage.objects.get(id=message_id)  # pylint: disable=no-member
+        if not msg.image:
+            return
 
-    thumb_io = io.BytesIO()
-    img.save(thumb_io, img.format)
-    msg.image.save(f"thumb_{msg.image.name}", ContentFile(thumb_io.getvalue()), save=True)
+        img = Image.open(msg.image)
+        img.thumbnail(size)
+
+        thumb_io = io.BytesIO()
+        img.save(thumb_io, img.format)
+        msg.image.save(f"thumb_{msg.image.name}", ContentFile(thumb_io.getvalue()), save=True)
+    except Exception as e:
+        if ROLLBAR_ACCESS_TOKEN:
+            rollbar.report_exc_info()
+        raise e
