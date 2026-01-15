@@ -1,4 +1,4 @@
-import pytest
+import pytest  # pylint: disable=import-error
 from django.contrib.gis.geos import Point
 from users.models import CustomUser
 from points.models import Point as GeoPoint

@@ -1,4 +1,5 @@
-import pytest
+import pytest   # pylint: disable=import-error
+
 from points.serializers import PointSerializer, PointMessageSerializer
 from django.contrib.gis.geos import Point
 from points.models import Point as GeoPoint, PointMessage
