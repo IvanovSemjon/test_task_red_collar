@@ -26,7 +26,7 @@ class PointMessageSerializer(serializers.ModelSerializer):
     """
     user_display_name = serializers.CharField(source="user.display_name", read_only=True)
     user_avatar = serializers.ImageField(source="user.avatar", read_only=True)
-    point = serializers.PrimaryKeyRelatedField(queryset=Point.objects.all())
+    point = serializers.PrimaryKeyRelatedField(queryset=Point.objects.all())   # pylint: disable=no-member
 
     class Meta:
         model = PointMessage
