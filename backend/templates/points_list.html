@@ -22,12 +22,35 @@
     let totalPages = 1;
 
     async function loadPage(page) {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            document.getElementById('points-grid').innerHTML = `
+                <div style="text-align: center; color: #ff0000; padding: 20px;">
+                    <h3>⚠ ДОСТУП ОГРАНИЧЕН ⚠</h3>
+                    <p>Для просмотра точек необходима авторизация</p>
+                    <p style="font-size: 0.9em; margin-top: 10px;">Используйте API для получения JWT токена</p>
+                </div>
+            `;
+            return;
+        }
+        
         try {
             const response = await fetch(`/api/points/?page=${page}`, {
                 headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                    'Authorization': 'Bearer ' + token
                 }
             });
+            
+            if (response.status === 401) {
+                document.getElementById('points-grid').innerHTML = `
+                    <div style="text-align: center; color: #ff0000; padding: 20px;">
+                        <h3>⚠ ТОКЕН ИСТЕК ⚠</h3>
+                        <p>Получите новый токен авторизации</p>
+                    </div>
+                `;
+                return;
+            }
+            
             const data = await response.json();
             
             currentPage = page;

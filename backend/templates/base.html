@@ -15,12 +15,7 @@
                 <a href="{% url 'home' %}">КАРТА</a>
                 <a href="{% url 'points-list' %}">ТОЧКИ</a>
                 <a href="{% url 'messages-list' %}">СООБЩЕНИЯ</a>
-                {% if user.is_authenticated %}
-                    <span class="user-info">{{ user.display_name|default:user.username }}</span>
-                    <a href="/admin/logout/">ВЫХОД</a>
-                {% else %}
-                    <a href="/admin/login/">ВХОД</a>
-                {% endif %}
+                <a href="{% url 'register' %}">РЕГИСТРАЦИЯ</a>
             </nav>
         </header>
 

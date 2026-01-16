@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.geos import Point as GeoPoint
 from .models import Point, PointMessage
 
 class PointSerializer(serializers.ModelSerializer):
@@ -18,6 +19,15 @@ class PointSerializer(serializers.ModelSerializer):
             "created_at", "updated_at"
         )
         read_only_fields = ("id", "owner", "owner_display_name", "owner_avatar", "created_at", "updated_at")
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.location:
+            representation['location'] = {
+                'type': 'Point',
+                'coordinates': [instance.location.x, instance.location.y]
+            }
+        return representation
 
     def create(self, validated_data):
         if isinstance(validated_data.get('location'), dict):

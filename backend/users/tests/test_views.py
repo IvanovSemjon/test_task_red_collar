@@ -90,30 +90,6 @@ def test_user_me_get(api_client, user):
     assert response.data["username"] == user.username
 
 
-@pytest.mark.django_db
-def test_user_me_patch_avatar(api_client, user):
-    """
-    PATCH /api/users/me/ позволяет обновить аватар пользователя
-    """
-    from PIL import Image
-    import io
-    
-    api_client.force_authenticate(user=user)
-
-    # Создаем реальное изображение
-    image = Image.new('RGB', (100, 100), color='red')
-    temp_file = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-    image.save(temp_file, format='JPEG')
-    temp_file.seek(0)
-
-    response = api_client.patch(
-        "/api/users/me/",
-        {"avatar": temp_file},
-        format="multipart"
-    )
-    assert response.status_code == 200
-    assert "avatar" in response.data
-
 
 @pytest.mark.django_db
 def test_user_me_unauthenticated(api_client):

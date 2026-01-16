@@ -42,19 +42,66 @@
     });
 
     async function loadPoints() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            showAuthWarning();
+            return;
+        }
+        
         try {
             const response = await fetch('/api/points/', {
-                headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('access_token')
-                }
+                headers: {'Authorization': 'Bearer ' + token}
             });
+            
+            if (!response.ok) {
+                console.error('HTTP error:', response.status);
+                showAuthWarning();
+                return;
+            }
+            
             const data = await response.json();
+            console.log('Received data:', data);
             
-            markers.forEach(m => map.removeLayer(m));
-            markers.length = 0;
+            // Очистка старых маркеров
+            if (markers && markers.length > 0) {
+                markers.forEach(m => map.removeLayer(m));
+                markers.length = 0;
+            }
             
-            data.results.forEach(point => {
+            // Проверка наличия results
+            if (!data || !data.results) {
+                console.error('No results in response');
+                showAuthWarning();
+                return;
+            }
+            
+            // Проверка что results это массив
+            if (!Array.isArray(data.results)) {
+                console.error('Results is not an array:', typeof data.results);
+                showAuthWarning();
+                return;
+            }
+            
+            console.log('Points count:', data.results.length);
+            
+            // Добавление маркеров
+            for (let i = 0; i < data.results.length; i++) {
+                const point = data.results[i];
+                console.log('Processing point:', i, point);
+                
+                if (!point.location) {
+                    console.log('Point has no location:', i);
+                    continue;
+                }
+                
+                if (!point.location.coordinates) {
+                    console.log('Point has no coordinates:', i);
+                    continue;
+                }
+                
                 const [lon, lat] = point.location.coordinates;
+                console.log('Coordinates:', lat, lon);
+                
                 const marker = L.marker([lat, lon], {icon: pointIcon}).addTo(map);
                 
                 const popupContent = `
@@ -68,10 +115,33 @@
                 
                 marker.bindPopup(popupContent);
                 markers.push(marker);
-            });
+            }
+            
+            console.log('Markers added:', markers.length);
         } catch (error) {
-            console.error('Ошибка загрузки точек:', error);
+            console.error('Error loading points:', error);
+            showAuthWarning();
         }
+    }
+    
+    function showAuthWarning() {
+        const warning = L.popup()
+            .setLatLng([55.7558, 37.6173])
+            .setContent(`
+                <div style="color: #ff0000; background: #000; padding: 15px; font-family: 'Courier New'; text-align: center;">
+                    <h3 style="margin: 0 0 10px 0; text-shadow: 0 0 5px #ff0000;">⚠ ДОСТУП ОГРАНИЧЕН ⚠</h3>
+                    <p style="margin: 10px 0;">Для просмотра точек необходима авторизация</p>
+                    <p style="margin: 10px 0; font-size: 0.9em;">Используйте API для получения JWT токена:</p>
+                    <code style="display: block; background: #111; padding: 5px; margin: 5px 0; font-size: 0.8em;">
+                        POST /api/auth/login/
+                    </code>
+                    <p style="margin: 10px 0; font-size: 0.8em;">Затем сохраните токен в localStorage:</p>
+                    <code style="display: block; background: #111; padding: 5px; margin: 5px 0; font-size: 0.8em;">
+                        localStorage.setItem('access_token', 'ваш_токен')
+                    </code>
+                </div>
+            `)
+            .openOn(map);
     }
 
     function getCurrentLocation() {
@@ -109,6 +179,12 @@
     }
 
     async function searchPoints() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            alert('⚠ Для поиска точек необходима авторизация');
+            return;
+        }
+        
         const lat = document.getElementById('search-lat').value;
         const lon = document.getElementById('search-lon').value;
         const radius = document.getElementById('search-radius').value;
@@ -136,11 +212,23 @@
                 `/api/points/search/?latitude=${lat}&longitude=${lon}&radius=${radius}`,
                 {
                     headers: {
-                        'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                        'Authorization': 'Bearer ' + token
                     }
                 }
             );
+            
+            if (response.status === 401) {
+                alert('⚠ Токен авторизации истек. Получите новый токен.');
+                return;
+            }
+            
             const points = await response.json();
+            
+            if (!Array.isArray(points)) {
+                console.error('Неверный формат данных поиска:', points);
+                alert('⚠ Ошибка при поиске точек');
+                return;
+            }
             
             const resultsDiv = document.getElementById('results');
             resultsDiv.innerHTML = `<h3 style="color: #00ff00; text-shadow: 0 0 10px #00ff00;">⚡ Найдено точек: ${points.length} ⚡</h3>`;
@@ -158,6 +246,7 @@
             });
         } catch (error) {
             console.error('Ошибка поиска:', error);
+            alert('⚠ Ошибка при поиске точек');
         }
     }
 

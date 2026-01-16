@@ -18,8 +18,16 @@ class PointViewSet(viewsets.ModelViewSet):
     Управление точками на карте.
     """
     serializer_class = PointSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    permission_classes = [IsOwnerOrReadOnly]
     http_method_names = ['post', 'get']
+
+    def get_permissions(self):
+        """
+        Чтение доступно всем, создание только авторизованным.
+        """
+        if self.action in ['list', 'retrieve', 'search']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated(), IsOwnerOrReadOnly()]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['owner', 'created_at']
     search_fields = ['title', 'description']

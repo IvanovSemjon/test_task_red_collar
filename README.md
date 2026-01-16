@@ -39,7 +39,6 @@ docker-compose up -d --build
 4. **Примените миграции и инициализируйте проект**
 ```bash
 docker-compose exec web python manage.py migrate
-docker-compose exec web python manage.py init_project
 ```
 
 5. **Создайте суперпользователя**
@@ -70,6 +69,34 @@ curl http://localhost:8000/health/
 - 📖 **ReDoc**: http://localhost:8000/api/docs/redoc/
 - 👨‍💼 **Django Admin**: http://localhost:8000/admin/
 - 🔍 **Django Silk**: http://localhost:8000/silk/
+
+### 🔐 Авторизация для просмотра карты
+
+Для просмотра точек на карте необходима авторизация:
+
+1. **Получите JWT токен через Swagger UI** (http://localhost:8000/api/docs/swagger/):
+   - Откройте раздел `POST /api/auth/login/`
+   - Нажмите "Try it out"
+   - Используйте тестовые данные:
+     ```json
+     {
+       "username": "survivor",
+       "password": "wasteland2024"
+     }
+     ```
+   - Скопируйте значение `access` из ответа
+
+2. **Сохраните токен в браузере**:
+   - Откройте http://localhost:8000/
+   - Нажмите F12 (откройте консоль разработчика)
+   - Перейдите на вкладку Console
+   - Выполните команду:
+     ```javascript
+     localStorage.setItem('access_token', 'ваш_токен_здесь');
+     location.reload();
+     ```
+
+3. **Готово!** Точки появятся на карте 🗺️
 
 ---
 
@@ -122,6 +149,31 @@ curl -X POST http://localhost:8000/api/users/register/ \
 
 ## 🗺️ Примеры запросов
 
+### Получение JWT токена
+
+Сначала получите токен авторизации:
+
+```bash
+curl -X POST http://localhost:8000/api/auth/login/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "survivor",
+    "password": "wasteland2024"
+  }'
+```
+
+**Ответ:**
+```json
+{
+  "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+}
+```
+
+**Используйте `access` токен в заголовке `Authorization: Bearer <токен>` для всех последующих запросов.**
+
+---
+
 ### 1. Создание точки
 
 ```bash
@@ -156,7 +208,31 @@ curl -X POST http://localhost:8000/api/points/ \
 }
 ```
 
-### 2. Поиск точек в радиусе
+### 2. Получение списка точек
+
+```bash
+curl -X GET "http://localhost:8000/api/points/" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+**Ответ:**
+```json
+{
+  "count": 3,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "title": "Убежище 101",
+      "location": {"type": "Point", "coordinates": [37.618423, 55.751244]},
+      "owner_display_name": "Выживший"
+    }
+  ]
+}
+```
+
+### 3. Поиск точек в радиусе
 
 ```bash
 curl -X GET "http://localhost:8000/api/points/search/?latitude=55.751244&longitude=37.618423&radius=5" \
@@ -168,7 +244,7 @@ curl -X GET "http://localhost:8000/api/points/search/?latitude=55.751244&longitu
 - `longitude` - Долгота (обязательно)
 - `radius` - Радиус в километрах (обязательно)
 
-### 3. Получение списка точек с фильтрацией
+### 4. Фильтрация и сортировка точек
 
 ```bash
 # С пагинацией
@@ -184,20 +260,20 @@ curl -X GET "http://localhost:8000/api/points/?ordering=-created_at" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
-### 4. Создание сообщения
+### 5. Создание сообщения
 
 ```bash
-curl -X POST http://localhost:8000/api/points/messages/ \
+curl -X POST http://localhost:8000/api/messages/ \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -F "point=1" \
   -F "text=Здесь безопасно!" \
   -F "image=@photo.jpg"
 ```
 
-### 5. Поиск сообщений в радиусе
+### 6. Поиск сообщений в радиусе
 
 ```bash
-curl -X GET "http://localhost:8000/api/points/messages/search_by_radius/?latitude=55.751244&longitude=37.618423&radius=10" \
+curl -X GET "http://localhost:8000/api/messages/search_by_radius/?latitude=55.751244&longitude=37.618423&radius=10" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -223,8 +299,15 @@ docker-compose exec web pytest --cov=. --cov-report=html
 
 ### Тестовые данные
 
-Логин: `survivor`  
-Пароль: `wasteland2024`
+После создания тестовых данных доступны:
+
+**Учетные данные:**
+- Логин: `survivor`  
+- Пароль: `wasteland2024`
+
+**Точки на карте:**
+- 5 тестовых точек с координатами в районе Москвы
+- Для просмотра на карте требуется авторизация (см. раздел "🔐 Авторизация для просмотра карты")
 
 ---
 
